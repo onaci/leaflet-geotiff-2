@@ -121,7 +121,7 @@ Methods - leafletGeotiff.plotty
 | `setClamps`           | (`clampLow: {Boolean}, clampLow: {Boolean}`) | set layer clamp options                                        |
 | `getColourbarDataUrl` | (`paletteName: {String}`)                    | get a data URI for a color palette (e.g. to display colorbar). |
 | `getColorbarOptions`  |                                              | get list of available color palettes                           |
-| `addColorScale`       | (`identifier: {String}, color_steps: {Array}, percentage_steps: {Array}`)|  define your own colorscale ("mycolorscale", ["#00ff00", "#0000ff", "#ff0000"], [0, 0.5, 1])|
+| `addColorScale`       | (`identifier: {String}, color_steps: {Array}, percentage_steps: {Array}`)|  define your own colorscale [plotty's](https://github.com/santilland/plotty) ("mycolorscale", ["#00ff00", "#0000ff", "#ff0000"], [0, 0.5, 1])|
 
 New color scales can be created using [plotty's](https://github.com/santilland/plotty) `addColorScale` method.
 
