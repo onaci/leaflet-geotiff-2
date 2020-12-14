@@ -23,6 +23,10 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     this._preLoadColorScale();
   },
 
+  addColorScale: function(identifier, color_steps, percentage_steps) {
+    plotty.addColorScale(identifier, color_steps, percentage_steps)
+  },
+
   setColorScale: function(colorScale) {
     this.options.colorScale = colorScale;
     this.parent._reset();
