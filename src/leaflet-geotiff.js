@@ -206,10 +206,10 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
       this._reset();
 
       this.min = this.raster.data[0]
-        .filter((val) => val !== this.options.noDataValue)
+        .filter((val) => !isNaN(val) && val !== this.options.noDataValue)
         .reduce((a, b) => Math.min(a, b));
       this.max = this.raster.data[0]
-        .filter((val) => val !== this.options.noDataValue)
+        .filter((val) => !isNaN(val) && val !== this.options.noDataValue)
         .reduce((a, b) => Math.max(a, b));
     }
   },
