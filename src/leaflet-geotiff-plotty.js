@@ -44,6 +44,10 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     return Object.keys(plotty.colorscales);
   },
 
+  addColorScale(name, colorsList,rangeMap) {
+    plotty.addColorScale(name, colorsList,rangeMap);
+  },
+
   getColourbarDataUrl(paletteName) {
     const canvas = document.createElement("canvas");
     const plot = new plotty.plot({
