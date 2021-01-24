@@ -46,8 +46,8 @@
     getColorbarOptions: function getColorbarOptions() {
       return Object.keys(plotty.colorscales);
     },
-    addColorScale: function addColorScale(name, colorsList, rangeMap) {
-      plotty.addColorScale(name, colorsList, rangeMap);
+    addColorScale: function addColorScale(name, colors, positions) {
+      plotty.addColorScale(name, colors, positions);
     },
     getColorbarDataUrl: function getColorbarDataUrl(paletteName) {
       var canvas = document.createElement("canvas");

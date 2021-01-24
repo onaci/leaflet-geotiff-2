@@ -13,7 +13,7 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     noDataValue: -9999,
   },
 
-  initialize: function(options) {
+  initialize: function (options) {
     if (typeof plotty === "undefined") {
       throw new Error("plotty not defined");
     }
@@ -23,18 +23,18 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     this._preLoadColorScale();
   },
 
-  setColorScale: function(colorScale) {
+  setColorScale: function (colorScale) {
     this.options.colorScale = colorScale;
     this.parent._reset();
   },
 
-  setDisplayRange: function(min, max) {
+  setDisplayRange: function (min, max) {
     this.options.displayMin = min;
     this.options.displayMax = max;
     this.parent._reset();
   },
 
-  setClamps: function(clampLow, clampHigh) {
+  setClamps: function (clampLow, clampHigh) {
     this.options.clampLow = clampLow;
     this.options.clampHigh = clampHigh;
     this.parent._reset();
@@ -44,8 +44,8 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     return Object.keys(plotty.colorscales);
   },
 
-  addColorScale(name, colorsList,rangeMap) {
-    plotty.addColorScale(name, colorsList,rangeMap);
+  addColorScale(name, colors, positions) {
+    plotty.addColorScale(name, colors, positions);
   },
 
   getColorbarDataUrl(paletteName) {
@@ -65,7 +65,7 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     return dataUrl;
   },
 
-  _preLoadColorScale: function() {
+  _preLoadColorScale: function () {
     var canvas = document.createElement("canvas");
     var plot = new plotty.plot({
       canvas: canvas,
@@ -80,7 +80,7 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     this.colorScaleData = plot.colorScaleCanvas.toDataURL();
   },
 
-  render: function(raster, canvas, ctx, args) {
+  render: function (raster, canvas, ctx, args) {
     var plottyCanvas = document.createElement("canvas");
     var plot = new plotty.plot({
       data: raster.data[0], // fix for use with rgb conversion (appending alpha channel)
@@ -106,6 +106,6 @@ L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
   }
 });
 
-L.LeafletGeotiff.plotty = function(options) {
+L.LeafletGeotiff.plotty = function (options) {
   return new L.LeafletGeotiff.Plotty(options);
 };
