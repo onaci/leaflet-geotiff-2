@@ -46,7 +46,10 @@
     getColorbarOptions: function getColorbarOptions() {
       return Object.keys(plotty.colorscales);
     },
-    getColourbarDataUrl: function getColourbarDataUrl(paletteName) {
+    addColorScale: function addColorScale(name, colors, positions) {
+      plotty.addColorScale(name, colors, positions);
+    },
+    getColorbarDataUrl: function getColorbarDataUrl(paletteName) {
       var canvas = document.createElement("canvas");
       var plot = new plotty.plot({
         canvas: canvas,
@@ -58,7 +61,7 @@
         clampLow: true,
         clampHigh: true
       });
-      dataUrl = plot.colorScaleCanvas.toDataURL();
+      var dataUrl = plot.colorScaleCanvas.toDataURL();
       canvas.remove();
       return dataUrl;
     },
