@@ -123,6 +123,10 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
 
     if(this.options.clearBeforeMove) {
       map.on("movestart", this._moveStart, this);
+      // dispay the image once the new one is loaded.
+      this._image.onload = function() {
+          this.style.display = 'block';
+      };
     }
 
 
@@ -337,7 +341,6 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
         this._image.style.height = size.y + "px";
 
         this._drawImage();
-        this._image.style.display = 'block';
       }
     }
   },
