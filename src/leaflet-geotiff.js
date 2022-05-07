@@ -126,7 +126,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
 
     if(this.options.clearBeforeMove) {
       map.on("movestart", this._moveStart, this);
-      // dispay the image once the new one is loaded.
+      // display the image once the new one is loaded.
       this._image.onload = function() {
           this.style.display = 'block';
       };
