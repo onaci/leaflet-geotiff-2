@@ -4,11 +4,12 @@
   (global = global || self, factory(global.plotty));
 }(this, (function (plotty) { 'use strict';
 
-  plotty = plotty && plotty.hasOwnProperty('default') ? plotty['default'] : plotty;
+  plotty = plotty && Object.prototype.hasOwnProperty.call(plotty, 'default') ? plotty['default'] : plotty;
 
   // Depends on:
   L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
     options: {
+      applyDisplayRange: true,
       colorScale: "viridis",
       clampLow: true,
       clampHigh: true,
@@ -57,7 +58,8 @@
         domain: [0, 1],
         colorScale: paletteName,
         clampLow: true,
-        clampHigh: true
+        clampHigh: true,
+        useWebGL: this.options.useWebGL
       });
       dataUrl = plot.colorScaleCanvas.toDataURL();
       canvas.remove();
@@ -73,7 +75,8 @@
         domain: [this.options.displayMin, this.options.displayMax],
         colorScale: this.options.colorScale,
         clampLow: this.options.clampLow,
-        clampHigh: this.options.clampHigh
+        clampHigh: this.options.clampHigh,
+        useWebGL: this.options.useWebGL
       });
       this.colorScaleData = plot.colorScaleCanvas.toDataURL();
     },
@@ -91,6 +94,8 @@
         width: raster.width,
         height: raster.height,
         domain: [this.options.displayMin, this.options.displayMax],
+        displayRange: [this.options.displayMin, this.options.displayMax],
+        applyDisplayRange: this.options.applyDisplayRange,
         colorScale: this.options.colorScale,
         clampLow: this.options.clampLow,
         clampHigh: this.options.clampHigh,

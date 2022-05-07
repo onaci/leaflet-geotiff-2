@@ -1,9 +1,9 @@
 {
   "name": "leaflet-geotiff-2",
   "description": "A LeafletJS plugin for displaying geoTIFF raster data.",
-  "version": "0.6.0",
-  "license": "MIT",
-  "author": "mail@danwild.io",
+  "version": "1.1.0",
+  "license": "See LICENSE in LICENSE.md",
+  "author": "daniel.wild@csiro.au",
   "contributors": [
     "Stuart Matthews",
     "Matthias Mohr",
@@ -12,7 +12,7 @@
     "faroscore"
   ],
   "scripts": {
-    "build": "./node_modules/rollup/dist/bin/rollup -c"
+    "build": "node ./node_modules/rollup/dist/bin/rollup -c"
   },
   "main": "dist/leaflet-geotiff.js",
   "dependencies": {
@@ -25,7 +25,7 @@
     "@babel/plugin-transform-regenerator": "^7.8.3",
     "@babel/plugin-transform-runtime": "^7.8.3",
     "@babel/preset-env": "^7.8.4",
-    "rollup": "^1.31.1",
+    "rollup": "^1.32.1",
     "rollup-plugin-babel": "^4.3.3"
   },
   "optionalDependencies": {

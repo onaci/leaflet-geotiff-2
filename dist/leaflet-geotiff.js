@@ -63,7 +63,8 @@
       onError: null,
       sourceFunction: null,
       noDataValue: undefined,
-      noDataKey: undefined
+      noDataKey: undefined,
+      useWorker: false
     },
 
     initialize(url, options) {
@@ -208,8 +209,28 @@
 
         this._reset();
 
-        this.min = this.raster.data[0].filter(val => val !== this.options.noDataValue).reduce((a, b) => Math.min(a, b));
-        this.max = this.raster.data[0].filter(val => val !== this.options.noDataValue).reduce((a, b) => Math.max(a, b));
+        if (window.Worker && this.options.useWorker) {
+          const worker_src = "onmessage = function(e){let data = e.data.data; let noDataValue = e.data.noDataValue; let min = data.filter(val=> val !== noDataValue).reduce((a,b)=>Math.min(a,b)); let max = data.filter(val => val !== noDataValue).reduce((a,b)=>Math.max(a,b)); postMessage({min:min, max:max});}";
+          const blob = new Blob([worker_src], {
+            type: 'application/javascript'
+          });
+          const worker = new Worker(URL.createObjectURL(blob));
+
+          worker.onmessage = e => {
+            this.min = e.data.min;
+            this.max = e.data.max;
+            console.log("worker terminated", e);
+            worker.terminate();
+          };
+
+          worker.postMessage({
+            data: this.raster.data[0],
+            noDataValue: this.options.noDataValue
+          });
+        } else {
+          this.min = this.raster.data[0].reduce((a, b) => b === this.options.noDataValue ? a : Math.min(a, b));
+          this.max = this.raster.data[0].reduce((a, b) => b == this.options.noDataValue ? a : Math.max(a, b));
+        }
       }
     },
 

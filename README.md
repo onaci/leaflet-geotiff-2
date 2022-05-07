@@ -4,6 +4,14 @@ A [LeafletJS](http://www.leafletjs.com) plugin for displaying geoTIFF raster dat
 
 ![Screenshot](/screenshots/example.png?raw=true)
 
+## Version 1 Notice
+
+As of version 1, `leaflet-geotiff-2` is now under [CSIRO](https://www.csiro.au)'s [Open Source Software Licence Agreement](LICENSE.md), which is a variation of the BSD / MIT License.
+
+There are no other plans for changes to licensing, and the project will remain open source.
+
+---
+
 ## Instructions
 
 ### 1. Load modules
@@ -36,6 +44,9 @@ const options = {
   // See renderer sections below.
   // One of: L.LeafletGeotiff.rgb, L.LeafletGeotiff.plotty, L.LeafletGeotiff.vectorArrows
   renderer: null,
+
+  // Use a worker thread for some initial compute (recommended for larger datasets)
+  useWorker: false,
 
   // Optional array specifying the corners of the data, e.g. [[40.712216, -74.22655], [40.773941, -74.12544]].
   // If omitted the image bounds will be read from the geoTIFF file (ModelTiepoint).
@@ -79,6 +90,9 @@ const options = {
 
   // Optional, override default opacity of 1 on the image added to the map
   opacity: 1,
+
+  // Optional, hide imagery while map is moving (may prevent 'flickering' in some browsers)
+  clearBeforeMove: false,
 };
 
 // create layer
@@ -105,6 +119,8 @@ const options = {
   displayMin: 0,
   // Optional. Maximum values to plot.
   displayMax: 1,
+  // Optional flag for plotty to enable/disable displayMin/Max.
+  applyDisplayRange: true,
   // Optional. If true values outside `displayMin` to `displayMax` will be rendered as if they were valid values.
   clampLow: true,
   clampHigh: true,
@@ -199,4 +215,4 @@ make it back into the `leaflet-geotiff` npm package, and to provide a place for 
 
 ## License
 
-MIT License (MIT)
+CSIRO Open Source Software Licence Agreement (variation of the BSD / MIT License)
