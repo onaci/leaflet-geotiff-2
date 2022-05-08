@@ -69,7 +69,8 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
     sourceFunction: null,
     noDataValue: undefined,
     noDataKey: undefined,
-    useWorker: false
+    useWorker: false,
+    bbox: undefined
   },
 
   initialize(url, options) {
@@ -92,6 +93,14 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
 
     L.Util.setOptions(this, options);
 
+    // if subsetting data via a bbox, calculate new image bounds
+    // unless already specified.
+    if (this.options.bbox && !this.options.bounds) {
+        options.bounds = this.options.bounds = [
+            [options.bbox[1], options.bbox[0]],
+            [options.bbox[3], options.bbox[2]]
+        ];
+    }
     if (this.options.bounds) {
       this._rasterBounds = L.latLngBounds(options.bounds);
     }
@@ -244,6 +253,10 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
           .reduce((a, b) => b == this.options.noDataValue ? a : Math.max(a, b));
       }
     }
+
+    // let any event listeners know that the tiff is loaded
+    this.fire('tiffLoad');
+
   },
 
   async setBand(band) {
@@ -252,8 +265,32 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
     const image = await this.tiff.getImage(this.options.image).catch((e) => {
       console.error("this.tiff.getImage threw error", e);
     });
+
+    let wnd;
+    if(this.options.bbox) {
+      const origin = image.getOrigin(),
+          oX = origin[0],
+          oY = origin[1],
+          res = image.getResolution(image),
+          imageResX = res[0],
+          imageResY = res[1];
+
+      wnd = [
+          Math.round((this.options.bbox[0] - oX) / imageResX),
+          Math.round((this.options.bbox[1] - oY) / imageResY),
+          Math.round((this.options.bbox[2] - oX) / imageResX),
+          Math.round((this.options.bbox[3] - oY) / imageResY),
+      ];
+      wnd = [
+          Math.min(wnd[0], wnd[2]),
+          Math.min(wnd[1], wnd[3]),
+          Math.max(wnd[0], wnd[2]),
+          Math.max(wnd[1], wnd[3]),
+      ];
+    }
+
     const data = await image
-      .readRasters({ samples: this.options.samples })
+      .readRasters({ samples: this.options.samples, window: wnd })
       .catch((e) => {
         console.error("image.readRasters threw error", e);
       });
@@ -270,8 +307,10 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
     this.raster.data = [r, g, b, a].filter(function (v) {
       return v;
     });
-    this.raster.width = image.getWidth();
-    this.raster.height = image.getHeight();
+    // use data instead of image for width/height since we may
+    // be loading a subset bbox of the image.
+    this.raster.width = data.width;
+    this.raster.height = data.height;
     //console.log("image", image, "data", data, "raster", this.raster.data);
     this._reset();
     return true;

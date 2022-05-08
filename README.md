@@ -93,6 +93,9 @@ const options = {
 
   // Optional, hide imagery while map is moving (may prevent 'flickering' in some browsers)
   clearBeforeMove: false,
+
+  // Optional, only load data from tiff in bounding box (useful to reduce load times when used with GeoTIFF.fromUrl)
+  bbox: undefined
 };
 
 // create layer
