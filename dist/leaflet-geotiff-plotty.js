@@ -1,10 +1,12 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('plotty')) :
   typeof define === 'function' && define.amd ? define(['plotty'], factory) :
-  (global = global || self, factory(global.plotty));
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.plotty));
 }(this, (function (plotty) { 'use strict';
 
-  plotty = plotty && Object.prototype.hasOwnProperty.call(plotty, 'default') ? plotty['default'] : plotty;
+  function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+  var plotty__default = /*#__PURE__*/_interopDefaultLegacy(plotty);
 
   // Depends on:
   L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
@@ -19,7 +21,7 @@
       useWebGL: false
     },
     initialize: function initialize(options) {
-      if (typeof plotty === "undefined") {
+      if (typeof plotty__default['default'] === "undefined") {
         throw new Error("plotty not defined");
       }
 
@@ -46,11 +48,11 @@
       this.parent._reset();
     },
     getColorbarOptions: function getColorbarOptions() {
-      return Object.keys(plotty.colorscales);
+      return Object.keys(plotty__default['default'].colorscales);
     },
     getColourbarDataUrl: function getColourbarDataUrl(paletteName) {
       var canvas = document.createElement("canvas");
-      var plot = new plotty.plot({
+      var plot = new plotty__default['default'].plot({
         canvas: canvas,
         data: [0],
         width: 1,
@@ -67,7 +69,7 @@
     },
     _preLoadColorScale: function _preLoadColorScale() {
       var canvas = document.createElement("canvas");
-      var plot = new plotty.plot({
+      var plot = new plotty__default['default'].plot({
         canvas: canvas,
         data: [0],
         width: 1,
@@ -88,7 +90,7 @@
         matrixTransform = [1, 0, 0, 0, -1, 0, 0, raster.height, 1];
       }
 
-      var plot = new plotty.plot({
+      var plot = new plotty__default['default'].plot({
         data: raster.data[0],
         // fix for use with rgb conversion (appending alpha channel)
         width: raster.width,
