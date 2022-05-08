@@ -1,8 +1,30 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('geotiff/dist-browser/geotiff')) :
   typeof define === 'function' && define.amd ? define(['geotiff/dist-browser/geotiff'], factory) :
-  (global = global || self, factory(global.GeoTIFF));
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.GeoTIFF));
 }(this, (function (GeoTIFF) { 'use strict';
+
+  function _interopNamespace(e) {
+    if (e && e.__esModule) return e;
+    var n = Object.create(null);
+    if (e) {
+      Object.keys(e).forEach(function (k) {
+        if (k !== 'default') {
+          var d = Object.getOwnPropertyDescriptor(e, k);
+          Object.defineProperty(n, k, d.get ? d : {
+            enumerable: true,
+            get: function () {
+              return e[k];
+            }
+          });
+        }
+      });
+    }
+    n['default'] = e;
+    return Object.freeze(n);
+  }
+
+  var GeoTIFF__namespace = /*#__PURE__*/_interopNamespace(GeoTIFF);
 
   // https://github.com/ScanEx/Leaflet.imageTransform/blob/master/src/L.ImageTransform.js
   // https://github.com/BenjaminVadant/leaflet-ugeojson
@@ -64,11 +86,12 @@
       sourceFunction: null,
       noDataValue: undefined,
       noDataKey: undefined,
-      useWorker: false
+      useWorker: false,
+      bbox: undefined
     },
 
     initialize(url, options) {
-      if (typeof GeoTIFF === "undefined") {
+      if (typeof GeoTIFF__namespace === "undefined") {
         throw new Error("GeoTIFF not defined");
       }
 
@@ -82,7 +105,12 @@
       this.y_max = null;
       this.min = null;
       this.max = null;
-      L.Util.setOptions(this, options);
+      L.Util.setOptions(this, options); // if subsetting data via a bbox, calculate new image bounds
+      // unless already specified.
+
+      if (this.options.bbox && !this.options.bounds) {
+        options.bounds = this.options.bounds = [[options.bbox[1], options.bbox[0]], [options.bbox[3], options.bbox[2]]];
+      }
 
       if (this.options.bounds) {
         this._rasterBounds = L.latLngBounds(options.bounds);
@@ -123,7 +151,11 @@
       map.on("moveend", this._reset, this);
 
       if (this.options.clearBeforeMove) {
-        map.on("movestart", this._moveStart, this);
+        map.on("movestart", this._moveStart, this); // display the image once the new one is loaded.
+
+        this._image.onload = function () {
+          this.style.display = 'block';
+        };
       }
 
       if (map.options.zoomAnimation && L.Browser.any3d) {
@@ -188,7 +220,7 @@
         const image = await this.tiff.getImage(this.options.image).catch(e => {
           console.error("this.tiff.getImage threw error", e);
         });
-        const meta = await image.getFileDirectory(); //console.log("meta", meta);
+        await image.getFileDirectory(); //console.log("meta", meta);
 
         try {
           const bounds = image.getBoundingBox();
@@ -231,7 +263,10 @@
           this.min = this.raster.data[0].reduce((a, b) => b === this.options.noDataValue ? a : Math.min(a, b));
           this.max = this.raster.data[0].reduce((a, b) => b == this.options.noDataValue ? a : Math.max(a, b));
         }
-      }
+      } // let any event listeners know that the tiff is loaded
+
+
+      this.fire('tiffLoad');
     },
 
     async setBand(band) {
@@ -239,8 +274,22 @@
       const image = await this.tiff.getImage(this.options.image).catch(e => {
         console.error("this.tiff.getImage threw error", e);
       });
+      let wnd;
+
+      if (this.options.bbox) {
+        const origin = image.getOrigin(),
+              oX = origin[0],
+              oY = origin[1],
+              res = image.getResolution(image),
+              imageResX = res[0],
+              imageResY = res[1];
+        wnd = [Math.round((this.options.bbox[0] - oX) / imageResX), Math.round((this.options.bbox[1] - oY) / imageResY), Math.round((this.options.bbox[2] - oX) / imageResX), Math.round((this.options.bbox[3] - oY) / imageResY)];
+        wnd = [Math.min(wnd[0], wnd[2]), Math.min(wnd[1], wnd[3]), Math.max(wnd[0], wnd[2]), Math.max(wnd[1], wnd[3])];
+      }
+
       const data = await image.readRasters({
-        samples: this.options.samples
+        samples: this.options.samples,
+        window: wnd
       }).catch(e => {
         console.error("image.readRasters threw error", e);
       });
@@ -253,9 +302,11 @@
       }) : data[this.options.alphaBand];
       this.raster.data = [r, g, b, a].filter(function (v) {
         return v;
-      });
-      this.raster.width = image.getWidth();
-      this.raster.height = image.getHeight(); //console.log("image", image, "data", data, "raster", this.raster.data);
+      }); // use data instead of image for width/height since we may
+      // be loading a subset bbox of the image.
+
+      this.raster.width = data.width;
+      this.raster.height = data.height; //console.log("image", image, "data", data, "raster", this.raster.data);
 
       this._reset();
 
@@ -312,8 +363,8 @@
         var scale = this._map.getZoomScale(e.zoom),
             nw = this._map.getBounds().getNorthWest(),
             se = this._map.getBounds().getSouthEast(),
-            topLeft = this._map._latLngToNewLayerPoint(nw, e.zoom, e.center),
-            size = this._map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft);
+            topLeft = this._map._latLngToNewLayerPoint(nw, e.zoom, e.center);
+            this._map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft);
 
         this._image.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(topLeft) + " scale(" + scale + ") ";
       }
@@ -334,8 +385,6 @@
           this._image.style.height = size.y + "px";
 
           this._drawImage();
-
-          this._image.style.display = 'block';
         }
       }
     },
