@@ -6,7 +6,7 @@ $(document).ready(function() {
   ).addTo(map);
 
   const windSpeedUrl =
-    "https://danwild.github.io/leaflet-geotiff-2/wind_speed.tif";
+    "https://onaci.github.io/leaflet-geotiff-2/wind_speed.tif";
   // const windSpeedUrl = "http://localhost:5500/wind_speed.tif";
   const plottyRenderer = L.LeafletGeotiff.plotty({
     displayMin: 0,
@@ -20,7 +20,7 @@ $(document).ready(function() {
 
   // VECTOR ARROW EG
   // const windDirUrl =
-  //   "https://danwild.github.io/leaflet-geotiff-2/wind_direction.tif";
+  //   "https://onaci.github.io/leaflet-geotiff-2/wind_direction.tif";
   // const arrowRenderer = L.LeafletGeotiff.vectorArrows({
   //   arrowSize: 20
   // });
