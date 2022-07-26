@@ -1,30 +1,8 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('geotiff/dist-browser/geotiff')) :
   typeof define === 'function' && define.amd ? define(['geotiff/dist-browser/geotiff'], factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.GeoTIFF));
+  (global = global || self, factory(global.GeoTIFF));
 }(this, (function (GeoTIFF) { 'use strict';
-
-  function _interopNamespace(e) {
-    if (e && e.__esModule) return e;
-    var n = Object.create(null);
-    if (e) {
-      Object.keys(e).forEach(function (k) {
-        if (k !== 'default') {
-          var d = Object.getOwnPropertyDescriptor(e, k);
-          Object.defineProperty(n, k, d.get ? d : {
-            enumerable: true,
-            get: function () {
-              return e[k];
-            }
-          });
-        }
-      });
-    }
-    n['default'] = e;
-    return Object.freeze(n);
-  }
-
-  var GeoTIFF__namespace = /*#__PURE__*/_interopNamespace(GeoTIFF);
 
   // https://github.com/ScanEx/Leaflet.imageTransform/blob/master/src/L.ImageTransform.js
   // https://github.com/BenjaminVadant/leaflet-ugeojson
@@ -87,11 +65,11 @@
       noDataValue: undefined,
       noDataKey: undefined,
       useWorker: false,
-      bbox: undefined
+      subset_bbox: undefined
     },
 
     initialize(url, options) {
-      if (typeof GeoTIFF__namespace === "undefined") {
+      if (typeof GeoTIFF === "undefined") {
         throw new Error("GeoTIFF not defined");
       }
 
@@ -105,11 +83,11 @@
       this.y_max = null;
       this.min = null;
       this.max = null;
-      L.Util.setOptions(this, options); // if subsetting data via a bbox, calculate new image bounds
+      L.Util.setOptions(this, options); // if subsetting data via a subset_bbox, calculate new image bounds
       // unless already specified.
 
-      if (this.options.bbox && !this.options.bounds) {
-        options.bounds = this.options.bounds = [[options.bbox[1], options.bbox[0]], [options.bbox[3], options.bbox[2]]];
+      if (this.options.subset_bbox && !this.options.bounds) {
+        options.bounds = this.options.bounds = [[options.subset_bbox[1], options.subset_bbox[0]], [options.subset_bbox[3], options.subset_bbox[2]]];
       }
 
       if (this.options.bounds) {
@@ -220,7 +198,7 @@
         const image = await this.tiff.getImage(this.options.image).catch(e => {
           console.error("this.tiff.getImage threw error", e);
         });
-        await image.getFileDirectory(); //console.log("meta", meta);
+        const meta = await image.getFileDirectory(); //console.log("meta", meta);
 
         try {
           const bounds = image.getBoundingBox();
@@ -276,14 +254,14 @@
       });
       let wnd;
 
-      if (this.options.bbox) {
+      if (this.options.subset_bbox) {
         const origin = image.getOrigin(),
               oX = origin[0],
               oY = origin[1],
               res = image.getResolution(image),
               imageResX = res[0],
               imageResY = res[1];
-        wnd = [Math.round((this.options.bbox[0] - oX) / imageResX), Math.round((this.options.bbox[1] - oY) / imageResY), Math.round((this.options.bbox[2] - oX) / imageResX), Math.round((this.options.bbox[3] - oY) / imageResY)];
+        wnd = [Math.round((this.options.subset_bbox[0] - oX) / imageResX), Math.round((this.options.subset_bbox[1] - oY) / imageResY), Math.round((this.options.subset_bbox[2] - oX) / imageResX), Math.round((this.options.subset_bbox[3] - oY) / imageResY)];
         wnd = [Math.min(wnd[0], wnd[2]), Math.min(wnd[1], wnd[3]), Math.max(wnd[0], wnd[2]), Math.max(wnd[1], wnd[3])];
       }
 
@@ -303,7 +281,7 @@
       this.raster.data = [r, g, b, a].filter(function (v) {
         return v;
       }); // use data instead of image for width/height since we may
-      // be loading a subset bbox of the image.
+      // be loading a subset subset_bbox of the image.
 
       this.raster.width = data.width;
       this.raster.height = data.height; //console.log("image", image, "data", data, "raster", this.raster.data);
@@ -363,8 +341,8 @@
         var scale = this._map.getZoomScale(e.zoom),
             nw = this._map.getBounds().getNorthWest(),
             se = this._map.getBounds().getSouthEast(),
-            topLeft = this._map._latLngToNewLayerPoint(nw, e.zoom, e.center);
-            this._map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft);
+            topLeft = this._map._latLngToNewLayerPoint(nw, e.zoom, e.center),
+            size = this._map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft);
 
         this._image.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(topLeft) + " scale(" + scale + ") ";
       }

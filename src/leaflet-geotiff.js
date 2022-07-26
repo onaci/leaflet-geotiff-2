@@ -70,7 +70,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
     noDataValue: undefined,
     noDataKey: undefined,
     useWorker: false,
-    bbox: undefined
+    subset_bbox: undefined
   },
 
   initialize(url, options) {
@@ -93,12 +93,12 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
 
     L.Util.setOptions(this, options);
 
-    // if subsetting data via a bbox, calculate new image bounds
+    // if subsetting data via a subset_bbox, calculate new image bounds
     // unless already specified.
-    if (this.options.bbox && !this.options.bounds) {
+    if (this.options.subset_bbox && !this.options.bounds) {
         options.bounds = this.options.bounds = [
-            [options.bbox[1], options.bbox[0]],
-            [options.bbox[3], options.bbox[2]]
+            [options.subset_bbox[1], options.subset_bbox[0]],
+            [options.subset_bbox[3], options.subset_bbox[2]]
         ];
     }
     if (this.options.bounds) {
@@ -267,7 +267,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
     });
 
     let wnd;
-    if(this.options.bbox) {
+    if(this.options.subset_bbox) {
       const origin = image.getOrigin(),
           oX = origin[0],
           oY = origin[1],
@@ -276,10 +276,10 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
           imageResY = res[1];
 
       wnd = [
-          Math.round((this.options.bbox[0] - oX) / imageResX),
-          Math.round((this.options.bbox[1] - oY) / imageResY),
-          Math.round((this.options.bbox[2] - oX) / imageResX),
-          Math.round((this.options.bbox[3] - oY) / imageResY),
+          Math.round((this.options.subset_bbox[0] - oX) / imageResX),
+          Math.round((this.options.subset_bbox[1] - oY) / imageResY),
+          Math.round((this.options.subset_bbox[2] - oX) / imageResX),
+          Math.round((this.options.subset_bbox[3] - oY) / imageResY),
       ];
       wnd = [
           Math.min(wnd[0], wnd[2]),
@@ -308,7 +308,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
       return v;
     });
     // use data instead of image for width/height since we may
-    // be loading a subset bbox of the image.
+    // be loading a subset subset_bbox of the image.
     this.raster.width = data.width;
     this.raster.height = data.height;
     //console.log("image", image, "data", data, "raster", this.raster.data);

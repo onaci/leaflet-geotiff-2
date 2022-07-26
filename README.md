@@ -49,7 +49,8 @@ const options = {
   useWorker: false,
 
   // Optional array specifying the corners of the data, e.g. [[40.712216, -74.22655], [40.773941, -74.12544]].
-  // If omitted the image bounds will be read from the geoTIFF file (ModelTiepoint).
+  // This allows you to explicitly define the geographical bounds of the data.
+  // If omitted, an attempt will be made to determine bounding box from image metadata.
   bounds: [],
 
   // Optional geoTIFF band to read
@@ -95,7 +96,7 @@ const options = {
   clearBeforeMove: false,
 
   // Optional, only load data from tiff in bounding box (useful to reduce load times when used with GeoTIFF.fromUrl)
-  bbox: undefined
+  subset_bbox: undefined,
 };
 
 // create layer
