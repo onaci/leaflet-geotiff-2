@@ -22,27 +22,22 @@
       if (typeof plotty === "undefined") {
         throw new Error("plotty not defined");
       }
-
       this.name = "Plotty";
       L.setOptions(this, options);
-
       this._preLoadColorScale();
     },
     setColorScale: function setColorScale(colorScale) {
       this.options.colorScale = colorScale;
-
       this.parent._reset();
     },
     setDisplayRange: function setDisplayRange(min, max) {
       this.options.displayMin = min;
       this.options.displayMax = max;
-
       this.parent._reset();
     },
     setClamps: function setClamps(clampLow, clampHigh) {
       this.options.clampLow = clampLow;
       this.options.clampHigh = clampHigh;
-
       this.parent._reset();
     },
     getColorbarOptions: function getColorbarOptions() {
@@ -83,11 +78,9 @@
     render: function render(raster, canvas, ctx, args) {
       var plottyCanvas = document.createElement("canvas");
       var matrixTransform = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-
       if (this.options.useWebGL) {
         matrixTransform = [1, 0, 0, 0, -1, 0, 0, raster.height, 1];
       }
-
       var plot = new plotty.plot({
         data: raster.data[0],
         // fix for use with rgb conversion (appending alpha channel)
@@ -107,7 +100,6 @@
       plot.render();
       this.colorScaleData = plot.colorScaleCanvas.toDataURL();
       var rasterImageData;
-
       if (this.options.useWebGL) {
         var imageDataArray = new Uint8ClampedArray(raster.width * raster.height * 4);
         var gl = plottyCanvas.getContext("webgl");
@@ -116,12 +108,10 @@
       } else {
         rasterImageData = plottyCanvas.getContext("2d").getImageData(0, 0, plottyCanvas.width, plottyCanvas.height);
       }
-
       var imageData = this.parent.transform(rasterImageData, args);
       ctx.putImageData(imageData, args.xStart, args.yStart);
     }
   });
-
   L.LeafletGeotiff.plotty = function (options) {
     return new L.LeafletGeotiff.Plotty(options);
   };
