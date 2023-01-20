@@ -1,4 +1,8 @@
-import * as GeoTIFF from "geotiff/dist-browser/geotiff";
+import {GeoTIFF, fromUrl, fromArrayBuffer} from "geotiff";
+import * as leafPlotty from "./leaflet-geotiff-plotty"
+import * as leafRGB from "./leaflet-geotiff-rgb"
+import * as leafVec from "./leaflet-geotiff-vector-arrows"
+
 // Ideas from:
 // https://github.com/ScanEx/Leaflet.imageTransform/blob/master/src/L.ImageTransform.js
 // https://github.com/BenjaminVadant/leaflet-ugeojson
@@ -79,7 +83,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
 
     this._url = url;
     this.raster = {};
-    this.sourceFunction = GeoTIFF.fromUrl;
+    this.sourceFunction = fromUrl;
     this._blockSize = 65536;
 
     this.x_min = null;
@@ -153,7 +157,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
 
   async _getData() {
     let tiff;
-    if (this.sourceFunction !== GeoTIFF.fromArrayBuffer) {
+    if (this.sourceFunction !== fromArrayBuffer) {
       tiff = await this.sourceFunction(this._url, {
         blockSize: this._blockSize,
       }).catch((e) => {
@@ -165,7 +169,7 @@ L.LeafletGeotiff = L.ImageOverlay.extend({
         }
       });
     } else {
-      tiff = await GeoTIFF.fromArrayBuffer(this.options.arrayBuffer, {
+      tiff = await fromArrayBuffer(this.options.arrayBuffer, {
         blockSize: this._blockSize,
       }).catch((e) => {
         if (this.options.onError) {

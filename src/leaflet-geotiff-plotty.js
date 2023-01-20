@@ -3,6 +3,7 @@
 
 import plotty from "plotty";
 
+
 L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
   options: {
     applyDisplayRange: true,

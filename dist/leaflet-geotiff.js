@@ -1,8 +1,233 @@
-(function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('geotiff/dist-browser/geotiff')) :
-  typeof define === 'function' && define.amd ? define(['geotiff/dist-browser/geotiff'], factory) :
-  (global = global || self, factory(global.GeoTIFF));
-}(this, (function (GeoTIFF) { 'use strict';
+(function (geotiff, plotty) {
+  'use strict';
+
+  // Depends on:
+  L.LeafletGeotiff.Plotty = L.LeafletGeotiffRenderer.extend({
+    options: {
+      applyDisplayRange: true,
+      colorScale: "viridis",
+      clampLow: true,
+      clampHigh: true,
+      displayMin: 0,
+      displayMax: 1,
+      noDataValue: -9999,
+      useWebGL: false
+    },
+    initialize: function (options) {
+      if (typeof plotty === "undefined") {
+        throw new Error("plotty not defined");
+      }
+      this.name = "Plotty";
+      L.setOptions(this, options);
+      this._preLoadColorScale();
+    },
+    setColorScale: function (colorScale) {
+      this.options.colorScale = colorScale;
+      this.parent._reset();
+    },
+    setDisplayRange: function (min, max) {
+      this.options.displayMin = min;
+      this.options.displayMax = max;
+      this.parent._reset();
+    },
+    setClamps: function (clampLow, clampHigh) {
+      this.options.clampLow = clampLow;
+      this.options.clampHigh = clampHigh;
+      this.parent._reset();
+    },
+    getColorbarOptions() {
+      return Object.keys(plotty.colorscales);
+    },
+    getColourbarDataUrl(paletteName) {
+      const canvas = document.createElement("canvas");
+      const plot = new plotty.plot({
+        canvas,
+        data: [0],
+        width: 1,
+        height: 1,
+        domain: [0, 1],
+        colorScale: paletteName,
+        clampLow: true,
+        clampHigh: true,
+        useWebGL: this.options.useWebGL
+      });
+      dataUrl = plot.colorScaleCanvas.toDataURL();
+      canvas.remove();
+      return dataUrl;
+    },
+    _preLoadColorScale: function () {
+      var canvas = document.createElement("canvas");
+      var plot = new plotty.plot({
+        canvas: canvas,
+        data: [0],
+        width: 1,
+        height: 1,
+        domain: [this.options.displayMin, this.options.displayMax],
+        colorScale: this.options.colorScale,
+        clampLow: this.options.clampLow,
+        clampHigh: this.options.clampHigh,
+        useWebGL: this.options.useWebGL
+      });
+      this.colorScaleData = plot.colorScaleCanvas.toDataURL();
+    },
+    render: function (raster, canvas, ctx, args) {
+      var plottyCanvas = document.createElement("canvas");
+      let matrixTransform = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+      if (this.options.useWebGL) {
+        matrixTransform = [1, 0, 0, 0, -1, 0, 0, raster.height, 1];
+      }
+      var plot = new plotty.plot({
+        data: raster.data[0],
+        // fix for use with rgb conversion (appending alpha channel)
+        width: raster.width,
+        height: raster.height,
+        domain: [this.options.displayMin, this.options.displayMax],
+        displayRange: [this.options.displayMin, this.options.displayMax],
+        applyDisplayRange: this.options.applyDisplayRange,
+        colorScale: this.options.colorScale,
+        clampLow: this.options.clampLow,
+        clampHigh: this.options.clampHigh,
+        canvas: plottyCanvas,
+        matrix: matrixTransform,
+        useWebGL: this.options.useWebGL
+      });
+      plot.setNoDataValue(this.options.noDataValue);
+      plot.render();
+      this.colorScaleData = plot.colorScaleCanvas.toDataURL();
+      var rasterImageData;
+      if (this.options.useWebGL) {
+        let imageDataArray = new Uint8ClampedArray(raster.width * raster.height * 4);
+        let gl = plottyCanvas.getContext("webgl");
+        gl.readPixels(0, 0, raster.width, raster.height, gl.RGBA, gl.UNSIGNED_BYTE, imageDataArray);
+        rasterImageData = new ImageData(imageDataArray, raster.width, raster.height);
+      } else {
+        rasterImageData = plottyCanvas.getContext("2d").getImageData(0, 0, plottyCanvas.width, plottyCanvas.height);
+      }
+      var imageData = this.parent.transform(rasterImageData, args);
+      ctx.putImageData(imageData, args.xStart, args.yStart);
+    }
+  });
+  L.LeafletGeotiff.plotty = function (options) {
+    return new L.LeafletGeotiff.Plotty(options);
+  };
+
+  // Depends on:
+  // https://github.com/santilland/plotty
+
+  L.LeafletGeotiff.RGB = L.LeafletGeotiffRenderer.extend({
+    options: {
+      cutoffBrightest: 0
+    },
+    initialize: function (options) {
+      L.setOptions(this, options);
+      this.name = "Canvas Renderer";
+    },
+    render: function (raster, canvas, ctx, args) {
+      var rasterImageData = ctx.createImageData(raster.width, raster.height);
+      var isGrayscale = raster.data.length < 3;
+      // compute max band max value if not set yet
+      if (!this.options.bandMaxVal) {
+        let maxVal = 0;
+        for (let i = 0; i < raster.data.length; i++) {
+          // get max value per band
+          /*// first return sorted array of unique values that are not NaN
+                  let srt = raster.data[i].filter(function(v, index, self){return (!isNaN(v) && self.indexOf(v)===index);}).sort();
+                  */
+          //  first return sorted array of values that are not NaN
+          let srt = raster.data[i].filter(function (v, index, self) {
+            return !isNaN(v);
+          }).sort();
+          let cMax = srt[srt.length - 1];
+          if (this.options.cutoffBrightest && this.options.cutoffBrightest > 0 && this.options.cutoffBrightest < 1) {
+            cMax = srt[srt.length - 1 - Math.round(srt.length * this.options.cutoffBrightest)];
+          }
+          if (cMax > maxVal) {
+            maxVal = cMax;
+          }
+          console.log("min value for band" + i + ": " + srt[0] + ", max value for band" + i + ": " + srt[srt.length - 1]);
+          this.options.bandMaxVal = maxVal;
+        }
+      }
+      var scaleMax = this.options.bandMaxVal > 0 ? this.options.bandMaxVal : 255;
+      function scale(val) {
+        return Math.round(val / scaleMax * 255);
+      }
+      for (let i = 0, j = 0; i < rasterImageData.data.length; i += 4, j += 1) {
+        rasterImageData.data[i] = scale(raster.data[0][j]); // R value
+        rasterImageData.data[i + 1] = scale(raster.data[isGrayscale ? 0 : 1][j]); // G value
+        rasterImageData.data[i + 2] = scale(raster.data[isGrayscale ? 0 : 2][j]); // B value
+        rasterImageData.data[i + 3] = isGrayscale || !raster.data[3] ? 255 : raster.data[3][j]; // A value
+      }
+
+      var imageData = this.parent.transform(rasterImageData, args);
+      ctx.putImageData(imageData, args.xStart, args.yStart);
+
+      // debug output
+      /* var dPlotCanvas = document.getElementById("debugCanvas");
+          dPlotCanvas.width = raster.width;
+          dPlotCanvas.height = raster.height;
+          var dCtx = dPlotCanvas.getContext("2d");
+          dCtx.clearRect(0, 0, dPlotCanvas.width, dPlotCanvas.height);
+          //this._image.src = plotCanvas.toDataURL();
+          dCtx.putImageData(imageData, 0,0);
+          console.log("imageDataURL (debug version):", dPlotCanvas.toDataURL()); */
+    }
+  });
+
+  L.LeafletGeotiff.rgb = function (options) {
+    return new L.LeafletGeotiff.RGB(options);
+  };
+
+  L.LeafletGeotiff.VectorArrows = L.LeafletGeotiffRenderer.extend({
+    options: {
+      arrowSize: 20
+    },
+    initialize: function (options) {
+      this.name = "Vector";
+      L.setOptions(this, options);
+    },
+    setArrowSize: function (colorScale) {
+      this.options.colorScale = colorScale;
+      this.parent._reset();
+    },
+    render: function (raster, canvas, ctx, args) {
+      var arrowSize = this.options.arrowSize;
+      var gridPxelSize = (args.rasterPixelBounds.max.x - args.rasterPixelBounds.min.x) / raster.width;
+      var stride = Math.max(1, Math.floor(1.2 * arrowSize / gridPxelSize));
+      for (var y = 0; y < raster.height; y = y + stride) {
+        for (var x = 0; x < raster.width; x = x + stride) {
+          var rasterIndex = y * raster.width + x;
+          if (raster.data[0][rasterIndex] >= 0) {
+            //Ignore missing values
+            //calculate lat-lon of of this point
+            var currentLng = this.parent._rasterBounds._southWest.lng + (x + 0.5) * args.lngSpan;
+            var currentLat = this.parent._rasterBounds._northEast.lat - (y + 0.5) * args.latSpan;
+
+            //convert lat-lon to pixel cordinates
+            var projected = this.parent._map.latLngToContainerPoint(L.latLng(currentLat, currentLng)); //If slow could unpack this calculation
+            var xProjected = projected.x;
+            var yProjected = projected.y;
+
+            //draw an arrow
+            ctx.save();
+            ctx.translate(xProjected, yProjected);
+            ctx.rotate((90 + raster.data[0][rasterIndex]) * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(-arrowSize / 2, 0);
+            ctx.lineTo(+arrowSize / 2, 0);
+            ctx.moveTo(arrowSize * 0.25, -arrowSize * 0.25);
+            ctx.lineTo(+arrowSize / 2, 0);
+            ctx.lineTo(arrowSize * 0.25, arrowSize * 0.25);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+    }
+  });
+  L.LeafletGeotiff.vectorArrows = function (options) {
+    return new L.LeafletGeotiff.VectorArrows(options);
+  };
 
   // Ideas from:
   // https://github.com/ScanEx/Leaflet.imageTransform/blob/master/src/L.ImageTransform.js
@@ -63,12 +288,12 @@
       useWorker: false
     },
     initialize(url, options) {
-      if (typeof GeoTIFF === "undefined") {
+      if (typeof geotiff.GeoTIFF === "undefined") {
         throw new Error("GeoTIFF not defined");
       }
       this._url = url;
       this.raster = {};
-      this.sourceFunction = GeoTIFF.fromUrl;
+      this.sourceFunction = geotiff.fromUrl;
       this._blockSize = 65536;
       this.x_min = null;
       this.x_max = null;
@@ -123,7 +348,7 @@
     },
     async _getData() {
       let tiff;
-      if (this.sourceFunction !== GeoTIFF.fromArrayBuffer) {
+      if (this.sourceFunction !== geotiff.fromArrayBuffer) {
         tiff = await this.sourceFunction(this._url, {
           blockSize: this._blockSize
         }).catch(e => {
@@ -135,7 +360,7 @@
           }
         });
       } else {
-        tiff = await GeoTIFF.fromArrayBuffer(this.options.arrayBuffer, {
+        tiff = await geotiff.fromArrayBuffer(this.options.arrayBuffer, {
           blockSize: this._blockSize
         }).catch(e => {
           if (this.options.onError) {
@@ -158,7 +383,7 @@
         const image = await this.tiff.getImage(this.options.image).catch(e => {
           console.error("this.tiff.getImage threw error", e);
         });
-        const meta = await image.getFileDirectory();
+        await image.getFileDirectory();
         //console.log("meta", meta);
 
         try {
@@ -268,8 +493,8 @@
         var scale = this._map.getZoomScale(e.zoom),
           nw = this._map.getBounds().getNorthWest(),
           se = this._map.getBounds().getSouthEast(),
-          topLeft = this._map._latLngToNewLayerPoint(nw, e.zoom, e.center),
-          size = this._map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft);
+          topLeft = this._map._latLngToNewLayerPoint(nw, e.zoom, e.center);
+          this._map._latLngToNewLayerPoint(se, e.zoom, e.center)._subtract(topLeft);
         this._image.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(topLeft) + " scale(" + scale + ") ";
       }
     },
@@ -467,4 +692,4 @@
     return new L.LeafletGeotiff(url, options);
   };
 
-})));
+})(geotiff, plotty);
